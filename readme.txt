@@ -23,8 +23,24 @@ CUDA_VISIBLE_DEVICES=3 nohup python test_simple.py --image_path /media/rema/data
 
 
 # test on hyper kvasir
-python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist --seq Test1 --save_depth 
-python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist --seq Test1inpainted --save_depth
-python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_add_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist --seq Test1 --save_depth
-python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_rem_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist --seq Test1 --save_depth
-python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_addrem_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist --seq Test1 --save_depth
+python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist_masked --seq Test1 --save_depth  --input_mask /media/rema/data/DataHKGab/Undistorted/mask_hk_288.png
+python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist_masked --seq Test1inpainted --save_depth  --input_mask /media/rema/data/DataHKGab/Undistorted/mask_hk_288.png
+python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_add_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist_masked --seq Test1 --save_depth  --input_mask /media/rema/data/DataHKGab/Undistorted/mask_hk_288.png
+python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_rem_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist_masked --seq Test1 --save_depth  --input_mask /media/rema/data/DataHKGab/Undistorted/mask_hk_288.png
+python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_addrem_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist_masked --seq Test1 --save_depth  --input_mask /media/rema/data/DataHKGab/Undistorted/mask_hk_288.png
+
+
+CUDA_VISIBLE_DEVICES=3 nohup python test_simple.py --image_path /media/rema/data/C3VD/Undistorted/Dataset --model_name IID_depth_model --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist --eval --seq all --save_triplet > IID.log 2>&1 &
+python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name IID_depth_model --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist --seq Test1 --save_depth
+python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name IID_depth_model --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist_masked --seq Test1 --save_depth --input_mask /media/rema/data/DataHKGab/Undistorted/mask_hk_288.png
+
+generating albedo:
+python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist_masked --seq Test1 --save_depth --input_mask /media/rema/data/DataHKGab/Undistorted/mask_hk_288.png --decompose
+python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_mono_hk_288/models/weights_19 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist_masked --seq Test1inpainted --save_depth --input_mask /media/rema/data/DataHKGab/Undistorted/mask_hk_288.png --decompose
+
+training with different parameters and epoch number = 30
+CUDA_VISIBLE_DEVICES=1 python train.py --config  /media/rema/configs/IID/finetuned_mono_hk_288_lr5.json
+CUDA_VISIBLE_DEVICES=1 python train.py --config  /media/rema/configs/IID/finetuned_mono_hk_288_ds3.json
+CUDA_VISIBLE_DEVICES=1 python train.py --config  /media/rema/configs/IID/finetuned_mono_hk_288_alb05.json
+CUDA_VISIBLE_DEVICES=1 python train.py --config  /media/rema/configs/IID/finetuned_mono_hk_288_rep5.json
+CUDA_VISIBLE_DEVICES=1 python train.py --config  /media/rema/configs/IID/finetuned_mono_hk_288_rec05.json

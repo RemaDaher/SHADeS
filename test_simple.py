@@ -28,7 +28,7 @@ def compute_errors(gt, pred):
     rmse = np.sqrt(rmse.mean())
     return rmse
 
-def load_monodepth2_model(method):
+def load_monodepth2_model(method, decompose):
     if method == "monodepth2":
         import networksMonoDepth2 as networks
     else:
@@ -38,6 +38,11 @@ def load_monodepth2_model(method):
     print("   Loading pretrained decoder")
     depth_decoder = networks.DepthDecoder(
         num_ch_enc=encoder.num_ch_enc, scales=range(4))
+    if method == "IID" and decompose:
+        decompose_encoder = networks.ResnetEncoder(18, False)   
+        decompose = networks.decompose_decoder(
+            decompose_encoder.num_ch_enc, scales=range(4))
+        return encoder, depth_decoder, decompose_encoder, decompose
     return encoder, depth_decoder, None, None
 
 def load_monovit_model_hr(depth_decoder_path, device):
@@ -63,9 +68,9 @@ def load_monovit_model_lr():
     depth_decoder = networks.DepthDecoder()
     return encoder, depth_decoder, None, None
 
-def load_model(depth_decoder_path, method, model_name, device):
+def load_model(depth_decoder_path, method, model_name, device, decompose=False):
     if method == "monodepth2" or method == "IID":
-        return load_monodepth2_model(method)
+        return load_monodepth2_model(method, decompose)
     elif method == "monovit":
         if "640" not in model_name and "288" not in model_name:
             return load_monovit_model_hr(depth_decoder_path, device)
@@ -124,6 +129,8 @@ def parse_args():
     parser.add_argument("--notclipped", action='store_true',
                         help='skip clipping depth values')
     parser.add_argument("--input_mask", type=str, default=None,)
+    parser.add_argument("--decompose", action='store_true',
+                        help='use decompose model')
 
     return parser.parse_args()
 
@@ -163,8 +170,14 @@ def test_simple(args, seq):
     
     # LOADING PRETRAINED MODEL
 
-    encoder, depth_decoder, feed_height, feed_width = load_model(
-        depth_decoder_path, args.method, args.model_name, device)
+    
+    if args.method == "IID" and args.decompose:
+        encoder, depth_decoder, decompose_encoder, decompose = load_model(
+            depth_decoder_path, args.method, args.model_name, device, args.decompose)
+    else:
+        encoder, depth_decoder, feed_height, feed_width = load_model(
+            depth_decoder_path, args.method, args.model_name, device)
+        
     
     if encoder is not None:
         encoder_path = os.path.join(model_path, "encoder.pth")
@@ -180,6 +193,18 @@ def test_simple(args, seq):
         
         loaded_dict = torch.load(depth_decoder_path, map_location=device)
         depth_decoder.load_state_dict(loaded_dict)
+        
+        if args.method == "IID" and args.decompose:
+            decompose_encoder_path = os.path.join(model_path, "decompose_encoder.pth")
+            decompose_path = os.path.join(model_path, "decompose.pth")
+            decompose_encoder.load_state_dict(torch.load(decompose_encoder_path, map_location=device))
+            decompose_encoder.to(device)
+            decompose_encoder.eval()
+            
+            decompose.load_state_dict(torch.load(decompose_path, map_location=device))
+            decompose.to(device)
+            decompose.eval()
+        
 
     depth_decoder.to(device)
     depth_decoder.eval()
@@ -195,6 +220,8 @@ def test_simple(args, seq):
         paths = glob.glob(os.path.join(args.image_path, seq, '*.{}'.format(args.ext)))
         output_directory = os.path.join(args.output_path, args.method, args.model_name, seq)
         os.makedirs(output_directory, exist_ok=True)
+        if args.method == "IID" and args.decompose:
+            os.makedirs(os.path.join(output_directory, "decomposed"), exist_ok=True)
     else:
         raise Exception("Can not find args.image_path: {}".format(args.image_path))
 
@@ -217,16 +244,17 @@ def test_simple(args, seq):
 
             # PREDICTION
             if args.input_mask is not None:
-                input_mask = pil.open(args.input_mask)
+                input_mask = pil.open(args.input_mask).convert('1')
                 from PIL import ImageFilter
-                for _ in range(3):
+                for _ in range(10):
                     input_mask = input_mask.filter(ImageFilter.MinFilter(3))
                 input_mask_pil = input_mask.resize((feed_width, feed_height), pil.LANCZOS)
                 # dilate slightly
                 
                 input_mask = transforms.ToTensor()(input_mask_pil).unsqueeze(0)
-                input_image = input_image * input_mask
-                transforms.functional.to_pil_image(input_image.squeeze(0)).save("inputimage_masked.png")
+                input_mask = torch.cat([input_mask]*3, dim=1)
+                # input_image[input_mask==0] = 0
+                # transforms.functional.to_pil_image(input_image.squeeze(0)).save("inputimage_masked.png")
 
             input_image = input_image.to(device)
             # transforms.functional.to_pil_image(input_image.squeeze(0)).save("inputimage.png")
@@ -236,6 +264,10 @@ def test_simple(args, seq):
             if not (args.method == "monovit" and "640" not in args.model_name and "288" not in args.model_name):
                 features = encoder(input_image)
                 outputs = depth_decoder(features)
+                if args.method == "IID" and args.decompose:
+                    decompose_features = decompose_encoder(input_image)
+                    outputs[("reflectance",0)],outputs[("light",0)] = decompose(decompose_features)
+                
             else:
                 outputs = depth_decoder(input_image)
 
@@ -245,15 +277,16 @@ def test_simple(args, seq):
             disp_resized = torch.nn.functional.interpolate(
                 pred_disp, (original_height, original_width), mode="bilinear", align_corners=False)
             
-            # print("disp_resized", disp_resized.shape, disp_resized[0,0,0,0], 
-            #     torch.min(disp_resized), torch.max(disp_resized))
+
             pred_depth = (1/disp_resized).squeeze().cpu().numpy()
 
             if args.save_depth:
-                # mask = np.array(pil.open("/media/rema/data/DataHKGab/mask_hk_288.png").convert('L')) > 0 
+                input_mask_np = input_mask[0, 0, :, :].numpy()
+                pred_depth[input_mask_np == 0] = 0
+                pred_depth[pred_depth > 0.3] = 0
                 max_value = np.max(pred_depth)
                 trip_im = pil.fromarray(np.stack((pred_depth*255/max_value,)*3, axis=-1).astype(np.uint8))
-                trip_im.save("outputimage.png")
+                # trip_im.save("outputimage.png")
                 # if args.input_mask is not None:
                 #     print("input_mask", type(trip_im), type(input_mask_pil))
                 #     print("input_mask", np.array(trip_im).shape, np.array(input_mask_pil).shape, (np.array(input_mask_pil)/255).shape, np.array(input_mask_pil).max())
@@ -264,7 +297,19 @@ def test_simple(args, seq):
             
                 output_name_trip = os.path.splitext(os.path.basename(image_path))[0]
                 name_dest_im_trip = os.path.join(output_directory, "{}.{}".format(output_name_trip, args.ext))
+                
                 trip_im.save(name_dest_im_trip)
+                if args.method == "IID" and args.decompose:
+                    name_dest_im_reflec = os.path.join(output_directory, "decomposed", "{}{}.{}".format("reflect",output_name_trip, args.ext))
+                    reflec = outputs[("reflectance",0)].squeeze().cpu().numpy().transpose(1,2,0)
+                    reflec_pil = pil.fromarray((reflec*255).astype(np.uint8))
+                    reflec_pil.save(name_dest_im_reflec)
+                    
+                    name_dest_im_light = os.path.join(output_directory, "decomposed", "{}{}.{}".format("light",output_name_trip, args.ext))
+                    light = outputs[("light",0)].squeeze().cpu().numpy()
+                    light_pil = pil.fromarray((light*255).astype(np.uint8))
+                    light_pil.save(name_dest_im_light)
+                    
                 print(name_dest_im_trip)            
             
                         

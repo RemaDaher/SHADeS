@@ -14,7 +14,7 @@ def highlight_min_max(s):
 def combine_stats(df, methods, augmentations):
     # Using a shorter approach to calculate mean and median for each configuration
     mean_median_stats = df.agg(['mean', 'median']).T
-
+    stats = {}
     for method in methods:
         # Calculate stats for each method
         method_stats = mean_median_stats.loc[[f"{method}{augmentation}" for augmentation in augmentations]].reset_index(drop=True).applymap("{:.1f}".format)
@@ -28,13 +28,15 @@ def combine_stats(df, methods, augmentations):
     return comb_stats
 
 # Read each file into a DataFrame
-augmentations = ['_', '_add', '_rem', '_addrem']
-methods = ['monodepth2', 'monovit', 'IID']
+IID_pretrained = True
+
+augmentations = [''] #['_', '_add', '_rem', '_addrem']
+methods = ['IID'] #['monodepth2', 'monovit', 'IID']
 
 method_strings = "[!s]*" # *mono* or *IID*
 clipped = True
 distorted = False
-singlescale = True
+singlescale = False
 specscale = False
 
 if singlescale: scaling = "/singlescale" 
@@ -46,9 +48,15 @@ dist_pre = "" if distorted else "un"
 
 clip = "notclipped" if not clipped else ""
 
+if IID_pretrained:
+    method_ext = ["", "(.*?)results.*.csv"]
+else:
+    method_ext = ["/*/models", "finetuned(.*?)_mono_hk_288/models/"]    
+
 direc = f"{dist_pre}disttrain/{dist_pre}dist{scaling}" #"undisttrain/undist" or "disttrain/dist"
-file_paths = sorted(glob.glob(f"/media/rema/outputs/{direc}/{method_strings}/*/models/*{clip}*.csv"))
-pattern = fr"/outputs/{direc}/(.*?)/{dist}finetuned(.*?)_mono_hk_288/models/"
+file_paths = sorted(glob.glob(f"/media/rema/outputs/{direc}/{method_strings}{method_ext[0]}/*{clip}*.csv"))
+pattern = fr"/outputs/{direc}/(.*?)/{dist}{method_ext[1]}"
+        
 dfs_mean_rmse = []
 dfs_mean_rmse_masked = []
 

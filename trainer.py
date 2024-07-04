@@ -436,6 +436,12 @@ class Trainer:
                 writer.add_image(
                         "input/{}".format(j),
                         inputs[("color", 0, 0)][j].data, self.step)
+                writer.add_image(
+                        "reflectance/{}".format(j),
+                        outputs[("reflectance", 0, 0)][j].data, self.step)
+                writer.add_image(
+                        "light/{}".format(j),
+                        outputs[("light", 0, 0)][j].data, self.step)
                     
 
     def save_opts(self):
