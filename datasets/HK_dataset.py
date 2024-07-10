@@ -41,7 +41,7 @@ class HKInitDataset(MonoDataset):
         return False
     
     def get_color(self, folder, frame_index, side, do_flip, do_rot):
-        color = self.loader(self.get_image_path(folder, frame_index, side))
+        color = self.loader(self.get_image_path(folder, frame_index, side)) #pil image
 
         if do_flip and self.flipping:
             color = color.transpose(pil.FLIP_LEFT_RIGHT)
