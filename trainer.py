@@ -100,20 +100,49 @@ class Trainer:
         img_ext = '.png' if self.opt.png else '.jpg'
         
         if self.opt.split == "hk":
-            sub_files =[]
-            if not isinstance(self.opt.data_path, list):
-                self.opt.data_path = [self.opt.data_path]
-            
-            trainval = []
-            for data_path in self.opt.data_path:
-                contents_lists = glob.glob(os.path.join(data_path, "*"))
+            aug = self.opt.aug_type
+            if not os.path.exists(fpath.format(f"train{aug}")):
                 sub_files =[]
-                for subdir in contents_lists:
-                    sub_files.append(sorted(glob.glob(os.path.join(subdir,f"*{img_ext}")))[1:-1])
-                all_files = list(chain.from_iterable(sub_files))
-                trainval.append(train_test_split(all_files, test_size=0.1, shuffle=False))
-            train_filenames = list(chain.from_iterable([trainval[i][1] for i in range(len(trainval))]))
-            val_filenames = list(chain.from_iterable([trainval[i][0] for i in range(len(trainval))]))
+                if not isinstance(self.opt.data_path, list):
+                    self.opt.data_path = [self.opt.data_path]
+                
+                traintestval = []
+                for data_path in self.opt.data_path:
+                    contents_lists = glob.glob(os.path.join(data_path, "*"))
+                    sub_files =[]
+                    for subdir in contents_lists:
+                        sub_files.append(sorted(glob.glob(os.path.join(subdir,f"*{img_ext}")))[1:-1])
+                    all_files = list(chain.from_iterable(sub_files))
+                    train_temp_f, test_f = train_test_split(all_files, test_size=0.04, shuffle=False)
+                    train_f, val_f = train_test_split(train_temp_f, test_size=0.1, shuffle=False)
+                    traintestval.append([train_f, test_f, val_f])
+                train_filenames = list(chain.from_iterable([traintestval[i][0] for i in range(len(traintestval))]))
+                test_filenames = list(chain.from_iterable([traintestval[i][1] for i in range(len(traintestval))]))
+                val_filenames = list(chain.from_iterable([traintestval[i][2] for i in range(len(traintestval))]))
+                
+                # Extract the directory from the file path pattern
+                directory = os.path.dirname(fpath)
+
+                # Ensure the directory exists
+                os.makedirs(directory, exist_ok=True)
+                
+                # Save train_filenames to a text file
+                with open(fpath.format(f"train{aug}"), 'w') as f:
+                    for filename in train_filenames:
+                        f.write("%s\n" % filename)
+
+                # Save test_filenames to a text file
+                with open(fpath.format(f"test{aug}"), 'w') as f:
+                    for filename in test_filenames:
+                        f.write("%s\n" % filename)
+
+                # Save val_filenames to a text file
+                with open(fpath.format(f"val{aug}"), 'w') as f:
+                    for filename in val_filenames:
+                        f.write("%s\n" % filename)
+            else:
+                train_filenames = readlines(fpath.format(f"train{aug}"))
+                val_filenames = readlines(fpath.format(f"val{aug}"))
             
         else:
             train_filenames = readlines(fpath.format("train"))

@@ -197,6 +197,10 @@ class MonodepthOptions:
         self.parser.add_argument("--input_mask_path", type=str, default=None,)
         self.parser.add_argument("--light_in_depth", help="if set, uses light in depth",
                                  action="store_true")
+        self.parser.add_argument("--aug_type", type=str,
+                                 help='type of data augmentation',
+                                 default='',
+                                 choices=['', 'add', 'rem', 'addrem'])
 
         
         

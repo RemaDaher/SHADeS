@@ -79,3 +79,6 @@ CUDA_VISIBLE_DEVICES=1 nohup python test_simple.py --image_path /media/rema/data
 CUDA_VISIBLE_DEVICES=2 nohup python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_mono_hk_288_flip/models/weights_29 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist_masked --seq Test1 --save_depth --input_mask /media/rema/data/DataHKGab/Undistorted/mask_hk_288.png --decompose &
 CUDA_VISIBLE_DEVICES=3 nohup python test_simple.py --image_path /media/rema/data/DataHKGab/Undistorted --model_name finetuned_mono_hk_288_rot/models/weights_29 --method IID --model_basepath /media/rema/trained_models --output_path /media/rema/outputs/undisttrain/undist_masked --seq Test1 --save_depth --input_mask /media/rema/data/DataHKGab/Undistorted/mask_hk_288.png --decompose &
 
+#After getting full dataset and fixing val train swapped bug
+
+CUDA_VISIBLE_DEVICES=1 nohup python train.py --config  /media/rema/configs/IID/finetuned_mono_hkfull_288.json &
