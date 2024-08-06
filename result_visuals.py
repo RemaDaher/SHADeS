@@ -43,12 +43,12 @@ def process_images(image_files, pred_depth_files, gt_depth_files= None):
 
 # List of image paths
 IID_pretrained = False
-aug_list = ['', '_add', '_rem', '_addrem']
+aug_list = ['', '_pseudo', '_lightinput', '_pseudo_lightinput']#['', '_add', '_rem', '_addrem']
 # seq_list = ['sigmoid_t3_b', 'trans_t2_a', 'trans_t2_b', 'trans_t3_a', 'trans_t4_a', 'trans_t4_b']
 # idx_list = ['0000', '0000', '0007', '0000', '0000', '0000']
 seq_list = ["sigmoid_t3_a", "trans_t2_a", "trans_t2_b", "trans_t4_b"]
 idx_list = ["0000", "0000", "0000", "0000"]
-model_list = ['monodepth2', 'monovit', 'IID']
+model_list = ['IID']#['monodepth2', 'monovit', 'IID']
 
 if IID_pretrained:
     for model in model_list:
@@ -79,4 +79,4 @@ else:
         result = np.vstack(rows)
 
         # Save the result
-        cv2.imwrite(f'/raid/rema/outputs/undisttrain/undist/visualresults{model}.png', result)
+        cv2.imwrite(f'/raid/rema/outputs/undisttrain/undist/visualresults{model}{str(aug_list)}.png', result)

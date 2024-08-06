@@ -110,3 +110,28 @@ python test_simple.py --image_path /home/rema/workspace/IID-SfmLearner/splits/hk
 python test_simple.py --image_path /home/rema/workspace/IID-SfmLearner/splits/hk/test_files.txt --model_name finetuned_mono_hkfull_288_addrem/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --save_depth --decompose 
 
 python test_simple.py --image_path /home/rema/workspace/IID-SfmLearner/splits/hk/test_files_inpainted.txt --model_name finetuned_mono_hkfull_288/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --save_depth --decompose 
+
+
+# IID still has artefacts so trying new ideas ! 
+CUDA_VISIBLE_DEVICES=1 nohup python train.py --config  /raid/rema/configs/IID/finetuned_mono_hkfull_288_pseudo.json > IID_fullhk_288_pseudo.log 2>&1 &
+CUDA_VISIBLE_DEVICES=1 nohup python train.py --config  /raid/rema/configs/IID/finetuned_mono_hkfull_288_lightinput.json > IID_fullhk_288_lightinput.log 2>&1 &
+CUDA_VISIBLE_DEVICES=2 nohup python train.py --config  /raid/rema/configs/IID/finetuned_mono_hkfull_288_pseudo_lightinput.json > IID_fullhk_288_pseudo_lightinput.log 2>&1 &
+
+
+python test_simple.py --image_path /home/rema/workspace/IID-SfmLearner/splits/hk/test_files.txt --model_name finetuned_mono_hkfull_288_lightinput/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --save_depth --decompose
+python test_simple.py --image_path /home/rema/workspace/IID-SfmLearner/splits/hk/test_files.txt --model_name finetuned_mono_hkfull_288_pseudo_lightinput/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --save_depth --decompose
+python test_simple.py --image_path /home/rema/workspace/IID-SfmLearner/splits/hk/test_files.txt --model_name finetuned_mono_hkfull_288_pseudo/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --save_depth --decompose
+
+CUDA_VISIBLE_DEVICES=0 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_lightinput/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --eval --seq all --save_triplet > IID_testfullhk_288_lightinput.log 2>&1 &
+CUDA_VISIBLE_DEVICES=1 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_pseudo_lightinput/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --eval --seq all --save_triplet > IID_testfullhk_288_pseudo_lightinput.log 2>&1 &
+CUDA_VISIBLE_DEVICES=2 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_pseudo/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --eval --seq all --save_triplet > IID_testfullhk_288_pseudo.log 2>&1 &
+
+single scale = median of sca
+les from logs of all methods:
+grep "Scaling ratios | med:" IID_testfullhk_288*.log | awk -F 'med: ' '{print $2}' | awk '{print $1}' | sort -n | awk 'BEGIN {c=0; sum=0;} {a[c++]=$1; sum+=$1;} END {if (c%2==1) print a[int(c/2)]; else print (a[c/2-1]+a[c/2])/2;}'
+61305.8 ~ 61306
+
+CUDA_VISIBLE_DEVICES=0 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist/singlescale --disable_median_scaling --pred_depth_scale_factor 61306 --eval --seq all --save_triplet > singlescale_IID_hk_288.log 2>&1 &
+CUDA_VISIBLE_DEVICES=1 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_pseudo/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist/singlescale --disable_median_scaling --pred_depth_scale_factor 61306 --eval --seq all --save_triplet > singlescale_IID_hk_288_pseudo.log 2>&1 &
+CUDA_VISIBLE_DEVICES=2 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_pseudo_lightinput/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist/singlescale --disable_median_scaling --pred_depth_scale_factor 61306 --eval --seq all --save_triplet > singlescale_IID_hk_288_pseudo_lightinput.log 2>&1 &
+CUDA_VISIBLE_DEVICES=2 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_lightinput/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist/singlescale --disable_median_scaling --pred_depth_scale_factor 61306 --eval --seq all --save_triplet > singlescale_IID_hk_288_lightinput.log 2>&1 &

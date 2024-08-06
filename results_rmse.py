@@ -37,8 +37,8 @@ def combine_stats(df, methods, augmentations):
 # Read each file into a DataFrame
 IID_pretrained = False
 
-augmentations = ['', '_add', '_rem', '_addrem'] #['']
-methods = ['monodepth2', 'monovit', 'IID'] #['IID'] 
+augmentations = ['', '_pseudo', '_lightinput', '_pseudo_lightinput'] #['', '_add', '_rem', '_addrem'] #['']
+methods = ['IID'] #['monodepth2', 'monovit', 'IID'] #
 
 method_strings = "[!s]*" # *mono* or *IID*
 clipped = True

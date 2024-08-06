@@ -45,7 +45,8 @@ decompose = False
 colormap = True
 color = "" if colormap else "raw"
 prefix = ["/decomposed","light"] if decompose else ["",""] # reflect or light
-aug_list = ['', '_add', '_rem', '_addrem'] #['', '_inp_pseudo', '_flip', '_rot']#'_ds3', '_alb05', '_rep5', '_rec05','_lr5']#, '_add', '_rem', '_addrem']
+aug_list = ['', '_pseudo', '_lightinput', '_pseudo_lightinput']#['', '_add', '_rem', '_addrem'] 
+#['', '_inp_pseudo', '_flip', '_rot']#'_ds3', '_alb05', '_rep5', '_rec05','_lr5']#, '_add', '_rem', '_addrem']
 seq_list = ["07bbedb7-1d45-4655-9ccd-aeb28a2c4bab", 
             "da5d2629-3a74-4ec0-9ace-57dbc6ebddad", 
             "baa6b87a-ff86-4306-9be2-c518956ae4ee", 
@@ -58,7 +59,7 @@ idx_list = ["00000", "00107", "00019", "00266"]
 #             "07bbedb7-1d45-4655-9ccd-aeb28a2c4bab"]
 # idx_list = ["00000", "00016", "00078", "00087"]
 
-model_list =  ['monodepth2', 'monovit', 'IID'] #['IID'] #
+model_list =  ['IID'] #['monodepth2', 'monovit', 'IID'] #
 
 if IID_pretrained:
     for model in model_list:
@@ -91,4 +92,4 @@ else:
         result = np.vstack(rows)
 
         # Save the result
-        cv2.imwrite(f'/raid/rema/outputs/undisttrain/undist/visualresults{color}{prefix[1]}{model}2HK.png', result)
+        cv2.imwrite(f'/raid/rema/outputs/undisttrain/undist/visualresults{color}{prefix[1]}{model}HK2{str(aug_list)}.png', result)

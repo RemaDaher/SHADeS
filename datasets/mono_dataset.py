@@ -212,12 +212,12 @@ class MonoDataset(data.Dataset):
                 other_side = {"r": "l", "l": "r"}[side]
                 inputs[("color", i, -1)] = self.get_color(folder, frame_index, other_side, do_flip, do_rot)
                 if self.inpaint_pseudo_gt_dir is not None:
-                    inpainted_folder = folder.replace(self.data_path[0], self.inpaint_pseudo_gt_dir)
+                    inpainted_folder = folder.replace(self.data_path, self.inpaint_pseudo_gt_dir)
                     inputs[("inpaint_color", i, -1)] = self.get_color(inpainted_folder, frame_index, other_side, do_flip, do_rot)
             else:
                 inputs[("color", i, -1)] = self.get_color(folder, frame_index + i, side, do_flip, do_rot)
                 if self.inpaint_pseudo_gt_dir is not None:
-                    inpainted_folder = folder.replace(self.data_path[0], self.inpaint_pseudo_gt_dir)
+                    inpainted_folder = folder.replace(self.data_path, self.inpaint_pseudo_gt_dir)
                     inputs[("inpaint_color", i, -1)] = self.get_color(inpainted_folder, frame_index + i, side, do_flip, do_rot)
 
         # adjusting intrinsics to match each scale in the pyramid
