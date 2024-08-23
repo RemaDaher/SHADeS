@@ -37,13 +37,13 @@ def combine_stats(df, methods, augmentations):
 # Read each file into a DataFrame
 IID_pretrained = False
 
-augmentations = ['', '_pseudo_dsms','_pseudo_dsms_automasking'] #['', '_pseudo', '_lightinput', '_pseudo_lightinput'] #['', '_add', '_rem', '_addrem'] #['']
+augmentations = ['', '_pseudo_dsms','_pseudo_dsms_automasking','_pseudo_dsms_automasking_noadjust']  #['', '_pseudo', '_lightinput', '_pseudo_lightinput'] #['', '_add', '_rem', '_addrem'] #['']
 methods = ['IID'] #['monodepth2', 'monovit', 'IID'] #
 
 method_strings = "[!s]*" # *mono* or *IID*
 clipped = True
 distorted = False
-singlescale = False
+singlescale = True
 specscale = False
 
 if singlescale: scaling = "/singlescale" 

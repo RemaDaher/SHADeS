@@ -111,6 +111,8 @@ class MonodepthOptions:
           self.parser.add_argument("--png",
                                    help="if set, trains from raw KITTI png files (instead of jpgs)",
                                    action="store_true")
+          self.parser.add_argument("--noadjust", help="if set, does not adjust the shading",
+                                   action="store_true")
 
           # OPTIMIZATION options
           self.parser.add_argument("--batch_size",

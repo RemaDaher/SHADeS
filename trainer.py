@@ -61,9 +61,10 @@ class Trainer:
         self.models["decompose"].to(self.device)
         self.parameters_to_train += list(self.models["decompose"].parameters())
 
-        self.models["adjust_net"]=networks.adjust_net()
-        self.models["adjust_net"].to(self.device)
-        self.parameters_to_train += list(self.models["adjust_net"].parameters())
+        if not self.opt.noadjust:
+            self.models["adjust_net"]=networks.adjust_net()
+            self.models["adjust_net"].to(self.device)
+            self.parameters_to_train += list(self.models["adjust_net"].parameters())
 
         self.models["pose_encoder"] = networks.ResnetEncoder(
             self.opt.num_layers,
@@ -231,8 +232,9 @@ class Trainer:
             param.requires_grad = True
         for param in self.models["decompose"].parameters():
             param.requires_grad = True
-        for param in self.models["adjust_net"].parameters():
-            param.requires_grad = True
+        if not self.opt.noadjust:
+            for param in self.models["adjust_net"].parameters():
+                param.requires_grad = True
 
         self.models["encoder"].train()
         self.models["depth"].train()
@@ -240,7 +242,8 @@ class Trainer:
         self.models["pose"].train()
         self.models["decompose_encoder"].train()
         self.models["decompose"].train()
-        self.models["adjust_net"].train()
+        if not self.opt.noadjust:
+            self.models["adjust_net"].train()
 
 
     def set_eval(self):
@@ -252,7 +255,8 @@ class Trainer:
         self.models["pose"].eval()
         self.models["decompose_encoder"].eval()
         self.models["decompose"].eval()
-        self.models["adjust_net"].eval()
+        if not self.opt.noadjust:
+            self.models["adjust_net"].eval()
        
 
     def train(self):
@@ -395,12 +399,14 @@ class Trainer:
             valid_mask = (mask_warp.abs().mean(dim=1, keepdim=True) > 0.0).float()
             outputs[("valid_mask", 0, frame_id)] = valid_mask
 
-            outputs[("warp_diff_color", 0, frame_id)] = torch.abs(inputs[("color_aug",0,0)]-outputs[("color_warp",0,frame_id)])*valid_mask
-            outputs[("transform", 0, frame_id)] = self.models["adjust_net"](outputs[("warp_diff_color", 0, frame_id)])
-            outputs[("light_adjust_warp",0,frame_id)] = outputs[("transform", 0, frame_id)] + outputs[("light_warp",0,frame_id)] 
-            outputs[("light_adjust_warp",0,frame_id)] = torch.clamp(outputs[("light_adjust_warp",0,frame_id)], min=0.0, max=1.0)
-
-            outputs[("reprojection_color_warp", 0, frame_id)] = outputs[("reflectance_warp", 0, frame_id)]*outputs[("light_adjust_warp", 0, frame_id)]
+            if not self.opt.noadjust:
+                outputs[("warp_diff_color", 0, frame_id)] = torch.abs(inputs[("color_aug",0,0)]-outputs[("color_warp",0,frame_id)])*valid_mask
+                outputs[("transform", 0, frame_id)] = self.models["adjust_net"](outputs[("warp_diff_color", 0, frame_id)])
+                outputs[("light_adjust_warp",0,frame_id)] = outputs[("transform", 0, frame_id)] + outputs[("light_warp",0,frame_id)] 
+                outputs[("light_adjust_warp",0,frame_id)] = torch.clamp(outputs[("light_adjust_warp",0,frame_id)], min=0.0, max=1.0)
+                outputs[("reprojection_color_warp", 0, frame_id)] = outputs[("reflectance_warp", 0, frame_id)]*outputs[("light_adjust_warp", 0, frame_id)]
+            else:
+                outputs[("reprojection_color_warp", 0, frame_id)] = outputs[("reflectance_warp", 0, frame_id)]*outputs[("light_warp", 0, frame_id)]
             
 
 
@@ -522,15 +528,17 @@ class Trainer:
                 writer.add_image(
                         "input_1/{}".format(j),
                         inputs[("color", 1, 0)][j].data, self.step)
-                writer.add_image(
-                        "transform/{}".format(j),
-                        outputs[("transform", 0, 1)][j].data, self.step)
+                if not self.opt.noadjust:
+                    writer.add_image(
+                            "transform/{}".format(j),
+                            outputs[("transform", 0, 1)][j].data, self.step)
                 writer.add_image(
                         "light_warped/{}".format(j),
                         outputs[("light_warp", 0, 1)][j].data, self.step)
-                writer.add_image(
-                        "light_adjust_warped/{}".format(j),
-                        outputs[("light_adjust_warp", 0, 1)][j].data, self.step)
+                if not self.opt.noadjust:
+                    writer.add_image(
+                            "light_adjust_warped/{}".format(j),
+                            outputs[("light_adjust_warp", 0, 1)][j].data, self.step)
                 if self.opt.automasking:
                     writer.add_image(
                             "automask/{}".format(j),

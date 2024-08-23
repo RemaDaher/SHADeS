@@ -138,18 +138,24 @@ CUDA_VISIBLE_DEVICES=2 nohup python test_simple.py --image_path /raid/rema/data/
 
 # added Iinp to ms as well not just ds. => pseudo_dsms
 CUDA_VISIBLE_DEVICES=1 nohup python train.py --config  /raid/rema/configs/IID/finetuned_mono_hkfull_288_pseudo_dsms.json > IID_fullhk_288_pseudo_dsms.log 2>&1 &
-
 python test_simple.py --image_path /home/rema/workspace/IID-SfmLearner/splits/hk/test_files.txt --model_name finetuned_mono_hkfull_288_pseudo_dsms/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --save_depth --decompose
-
 CUDA_VISIBLE_DEVICES=0 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_pseudo_dsms/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --eval --seq all --save_triplet > IID_testfullhk_288_pseudo_dsms.log 2>&1 &
-single scale = median of sca
-les from logs of all methods:
 grep "Scaling ratios | med:" IID_testfullhk_288_pseudo_dsms.log | awk -F 'med: ' '{print $2}' | awk '{print $1}' | sort -n | awk 'BEGIN {c=0; sum=0;} {a[c++]=$1; sum+=$1;} END {if (c%2==1) print a[int(c/2)]; else print (a[c/2-1]+a[c/2])/2;}'
 68997.2 ~ 68997
-
 CUDA_VISIBLE_DEVICES=1 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_pseudo_dsms/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist/singlescale --disable_median_scaling --pred_depth_scale_factor 68997 --eval --seq all --save_triplet > singlescale_IID_hk_288_pseudo_dsms.log 2>&1 &
 
 # automasking with pseudo_dsms
 CUDA_VISIBLE_DEVICES=1 nohup python train.py --config  /raid/rema/configs/IID/finetuned_mono_hkfull_288_pseudo_dsms_automasking.json > IID_fullhk_288_pseudo_dsms_automasking.log 2>&1 &
 python test_simple.py --image_path /home/rema/workspace/IID-SfmLearner/splits/hk/test_files.txt --model_name finetuned_mono_hkfull_288_pseudo_dsms_automasking/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --save_depth --decompose
 CUDA_VISIBLE_DEVICES=1 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_pseudo_dsms_automasking/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --eval --seq all --save_triplet > IID_testfullhk_288_pseudo_dsms_automasking.log 2>&1 &
+grep "Scaling ratios | med:" IID_testfullhk_288_pseudo_dsms_automasking.log | awk -F 'med: ' '{print $2}' | awk '{print $1}' | sort -n | awk 'BEGIN {c=0; sum=0;} {a[c++]=$1; sum+=$1;} END {if (c%2==1) print a[int(c/2)]; else print (a[c/2-1]+a[c/2])/2;}'
+69569.9 ~ 69570
+CUDA_VISIBLE_DEVICES=0 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_pseudo_dsms_automasking/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist/singlescale --disable_median_scaling --pred_depth_scale_factor 69570 --eval --seq all --save_triplet > singlescale_IID_hk_288_pseudo_dsms_automasking.log 2>&1 &
+
+# removing adjusting losses and network
+CUDA_VISIBLE_DEVICES=2 nohup python train.py --config  /raid/rema/configs/IID/finetuned_mono_hkfull_288_pseudo_dsms_automasking_noadjust.json > IID_fullhk_288_pseudo_dsms_automasking_noadjust.log 2>&1 &
+python test_simple.py --image_path /home/rema/workspace/IID-SfmLearner/splits/hk/test_files.txt --model_name finetuned_mono_hkfull_288_pseudo_dsms_automasking_noadjust/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --save_depth --decompose
+CUDA_VISIBLE_DEVICES=1 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_pseudo_dsms_automasking_noadjust/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist --eval --seq all --save_triplet > IID_testfullhk_288_pseudo_dsms_automasking_noadjust.log 2>&1 &
+grep "Scaling ratios | med:" IID_testfullhk_288_pseudo_dsms_automasking_noadjust.log | awk -F 'med: ' '{print $2}' | awk '{print $1}' | sort -n | awk 'BEGIN {c=0; sum=0;} {a[c++]=$1; sum+=$1;} END {if (c%2==1) print a[int(c/2)]; else print (a[c/2-1]+a[c/2])/2;}'
+64195.8 ~ 64196
+CUDA_VISIBLE_DEVICES=0 nohup python test_simple.py --image_path /raid/rema/data/C3VD/Undistorted/Dataset --model_name finetuned_mono_hkfull_288_pseudo_dsms_automasking_noadjust/models/weights_19 --method IID --model_basepath /raid/rema/trained_models --output_path /raid/rema/outputs/undisttrain/undist/singlescale --disable_median_scaling --pred_depth_scale_factor 64196 --eval --seq all --save_triplet > singlescale_IID_hk_288_pseudo_dsms_automasking_noadjust.log 2>&1 &
