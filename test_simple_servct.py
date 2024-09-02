@@ -131,8 +131,8 @@ def parse_args():
     parser.add_argument("--input_mask", type=str, default=None,) #this is only for visualization and not for masking image before putting in encoder
     parser.add_argument("--decompose", action='store_true',
                         help='use decompose model')
-    parser.add_argument("--addedspec", action='store_true',
-                        help='use added specularity c3vd dataset')
+    parser.add_argument("--dataset", type=str, default="c3vd",
+                        help='dataset to use for evaluation')
 
     return parser.parse_args()
 
@@ -218,8 +218,12 @@ def test_simple(args, seq):
         output_directory = os.path.dirname(args.image_path)
     elif os.path.isdir(args.image_path):
         # Searching folder for images
-        print(os.path.join(args.image_path, seq, '*.{}'.format(args.ext)))
-        paths = glob.glob(os.path.join(args.image_path, seq, '*.{}'.format(args.ext)))
+        if args.dataset == "servct":
+            subfolder = "Left_rectified"
+        else:
+            subfolder = ""
+        print(os.path.join(args.image_path, seq, subfolder, '*.{}'.format(args.ext)))
+        paths = glob.glob(os.path.join(args.image_path, seq, subfolder, '*.{}'.format(args.ext)))
         output_directory = os.path.join(args.output_path, args.method, args.model_name, args.type_data, seq)
         os.makedirs(output_directory, exist_ok=True)
         if args.method == "IID" and args.decompose:
@@ -318,16 +322,16 @@ def test_simple(args, seq):
                         
             if args.eval:
                 # load gt 
-                if args.addedspec:
-                    adjusted_image_path = image_path.replace("AddedSpec", "Dataset")
+                if args.dataset == "servct":
+                    gt_depth_raw = pil.open(image_path.replace("Left_rectified", "Reference_CT/DepthL"))
+                    gt_depth_raw = 1/np.array(gt_depth_raw, dtype=np.float32)*10000
                 else:
-                    adjusted_image_path = image_path
-                tiff_gt_depth = pil.open(adjusted_image_path.replace("color", "depth").replace("png", "tiff"))
-                gt_depth = np.array(tiff_gt_depth, dtype=np.float32)
+                    gt_depth_raw = pil.open(image_path.replace("color", "depth").replace("png", "tiff"))
+                gt_depth = np.array(gt_depth_raw, dtype=np.float32)
                 
                 
                 # spec mask
-                spec_mask = pil.open(adjusted_image_path.replace("Dataset", "Annotations_Dilated"))
+                spec_mask = pil.open(image_path.replace("Dataset", "Annotations_Dilated"))
                 spec_mask = spec_mask.convert('L')
                 spec_mask = spec_mask.point( lambda p: 255 if p > 200 else 0 )
                 spec_mask = np.array(spec_mask.convert('1'))
@@ -353,8 +357,8 @@ def test_simple(args, seq):
                 if args.save_triplet:
                     max_value = np.max([np.max(gt_depth), np.max(pred_depth)])
                     trip_im = pil.fromarray(np.hstack([np.array(pil.open(image_path).convert('RGB')),
-                                                       np.stack((pred_depth*mask*255/max_value,)*3, axis=-1).astype(np.uint8), 
-                                                       np.stack((gt_depth*mask*255/max_value,)*3, axis=-1).astype(np.uint8)
+                                                       np.stack((pred_depth*mask*255,)*3, axis=-1).astype(np.uint8), 
+                                                       np.stack((gt_depth*mask*255,)*3, axis=-1).astype(np.uint8)
                                                        ]))
                     output_name_trip = os.path.splitext(os.path.basename(image_path))[0]
                     name_dest_im_trip = os.path.join(output_directory, "{}_triplet.{}".format(output_name_trip, args.ext))

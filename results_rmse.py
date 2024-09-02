@@ -45,10 +45,13 @@ clipped = True
 distorted = False
 singlescale = True
 specscale = False
+addedspec = True
 
 if singlescale: scaling = "/singlescale" 
 elif specscale: scaling = "/specular_scaling"
 else:           scaling = ""
+
+if addedspec:   addsptxt = "/addedspec"
 
 dist = "dist_" if distorted else ""
 dist_pre = "" if distorted else "un"
@@ -60,7 +63,7 @@ if IID_pretrained:
 else:
     method_ext = ["/*/models", "finetuned_mono_hkfull_288(.*?)/models/"]    
 
-direc = f"{dist_pre}disttrain/{dist_pre}dist{scaling}" #"undisttrain/undist" or "disttrain/dist"
+direc = f"{dist_pre}disttrain/{dist_pre}dist{addsptxt}{scaling}" #"undisttrain/undist" or "disttrain/dist"
 file_paths = sorted(glob.glob(f"/raid/rema/outputs/{direc}/{method_strings}{method_ext[0]}/*{clip}*.csv"))
 pattern = fr"/outputs/{direc}/(.*?)/{dist}{method_ext[1]}"
         

@@ -46,9 +46,11 @@ IID_pretrained = False
 aug_list = ['', '_pseudo_dsms','_pseudo_dsms_automasking','_pseudo_dsms_automasking_noadjust', '_pseudo_dsms_automasking_sploss']  #['', '_pseudo', '_lightinput', '_pseudo_lightinput']#['', '_add', '_rem', '_addrem']
 # seq_list = ['sigmoid_t3_b', 'trans_t2_a', 'trans_t2_b', 'trans_t3_a', 'trans_t4_a', 'trans_t4_b']
 # idx_list = ['0000', '0000', '0007', '0000', '0000', '0000']
-seq_list = ["sigmoid_t3_a", "trans_t2_a", "trans_t2_b", "trans_t4_b"]
-idx_list = ["0000", "0000", "0000", "0000"]
+seq_list = ["trans_t4_a", "trans_t4_a", "trans_t4_a", "trans_t4_a"]
+idx_list = ["0130", "0150", "0180", "0200"]
 model_list = ['IID']#['monodepth2', 'monovit', 'IID']
+addsp = True
+addsptxt =  "AddedSpec" if addsp else "Dataset"
 
 if IID_pretrained:
     for model in model_list:
@@ -69,9 +71,9 @@ else:
     for model in model_list:
         rows = []
         for seq, idx in zip(seq_list, idx_list):
-            image_files = [f"/raid/rema/data/C3VD/Undistorted/Dataset/{seq}/{idx}_color.png"]
+            image_files = [f"/raid/rema/data/C3VD/Undistorted/{addsptxt}/{seq}/{idx}_color.png"]
             gt_depth_files = [f"/raid/rema/data/C3VD/Undistorted/Dataset/{seq}/{idx}_depth.tiff"]
-            pred_depth_files = [f"/raid/rema/outputs/undisttrain/undist/{model}/finetuned_mono_hkfull_288{aug}/models/weights_19/{seq}/{idx}_color_triplet.png" for aug in aug_list]
+            pred_depth_files = [f"/raid/rema/outputs/undisttrain/undist/{addsptxt.lower()}/{model}/finetuned_mono_hkfull_288{aug}/models/weights_19/{seq}/{idx}_color_triplet.png" for aug in aug_list]
             # Process the images for each row
             rows.append(process_images(image_files, pred_depth_files, gt_depth_files))
 
@@ -79,4 +81,4 @@ else:
         result = np.vstack(rows)
 
         # Save the result
-        cv2.imwrite(f'/raid/rema/outputs/undisttrain/undist/visualresults{model}{str(aug_list)}.png', result)
+        cv2.imwrite(f'/raid/rema/outputs/undisttrain/undist/visualresults{addsptxt}{model}{str(aug_list)}.png', result)
