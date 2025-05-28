@@ -230,6 +230,8 @@ def parse_args():
                         help='use maxing value for depth values')
     parser.add_argument("--maxing_value", type=float, default=0.8,
                         help='maxing value for depth values')
+    parser.add_argument("--split_path", type=str, default=None,
+                        help='path to a split file with image paths for evaluation')
     return parser.parse_args()
 
 
@@ -538,12 +540,7 @@ if __name__ == '__main__':
     if "Inpainted_HKgen9" in args.image_path:
         args.type_data = "inpainted"
     # Check if args.seq is set to 'all'
-    if os.path.isdir(args.image_path) and args.seq == ['all']:
-        # List all folders in args.image_path
-        sequences = sorted([folder for folder in os.listdir(args.image_path) if os.path.isdir(os.path.join(args.image_path, folder))])
-    elif os.path.isdir(args.image_path):
-        sequences = args.seq
-    elif os.path.isfile(args.split_path) and args.split_path.endswith('.txt'):
+    if args.split_path is not None:
         if args.split_path.endswith('inpainted.txt'):
             args.type_data = "hkinpainted"
         else:
@@ -553,7 +550,12 @@ if __name__ == '__main__':
             images = f.read().splitlines()
         # Extract unique last folder names directly
         sequences = sorted(list({os.path.basename(os.path.normpath(os.path.split(path)[0])) for path in images}))
-        args.image_path = os.path.dirname(os.path.dirname(images[0]))
+    elif os.path.isdir(args.image_path) and args.seq == ['all']:
+        # List all folders in args.image_path
+        sequences = sorted([folder for folder in os.listdir(args.image_path) if os.path.isdir(os.path.join(args.image_path, folder))])
+    elif os.path.isdir(args.image_path):
+        sequences = args.seq
+
     if args.eval:
         file =  open(f"{out}{score}{args.type_data}results{notclipped}{date}.csv", mode='w')
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)

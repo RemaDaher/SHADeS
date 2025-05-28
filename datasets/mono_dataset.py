@@ -194,7 +194,7 @@ class MonoDataset(data.Dataset):
         line = self.filenames[index].split()
         if len(line) == 1:
             if self.data_path not in line[0]:
-                folder = os.path.join(self.datapath,os.path.dirname(line[0]))
+                folder = os.path.join(self.data_path,os.path.dirname(line[0]))
             else:
                 folder = os.path.dirname(line[0])
                 
